@@ -12,9 +12,11 @@ public class PlayerMovement : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI loseText;
     int score = 0;
+    public float jumpBufferTime = 0.2f;
+    private float jumpBufferCounter;
     void Update()
     {
-        if (isGameOver) return; 
+        if (isGameOver) return;
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
         Vector3 camForward = cameraTransform.forward;
@@ -25,25 +27,29 @@ public class PlayerMovement : MonoBehaviour
         camRight.Normalize();
         Vector3 moveDirection = (camForward * vertical + camRight * horizontal).normalized;
         transform.Translate(moveDirection * speed * Time.deltaTime, Space.World);
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+        if (jumpBufferCounter > 0f && isGrounded)
         {
             GetComponent<Rigidbody>().AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             isGrounded = false;
+            jumpBufferCounter = 0f; 
         }
     }
     void OnCollisionEnter(Collision collision)
     {
-        // AJAN 1: Küp herhangi bir þeye çarptýðý an Konsol'a adýný ve etiketini yazdýracak!
-        Debug.Log("KÜP ÞUNA ÇARPTI: " + collision.gameObject.name + " | ETÝKETÝ: " + collision.gameObject.tag);
-
-        if (collision.gameObject.name == "Plane")
+        if (!collision.gameObject.CompareTag("Enemy"))
         {
             isGrounded = true;
         }
-
         if (collision.gameObject.CompareTag("Enemy") && !isGameOver)
         {
-            // AJAN 2: Eðer çarptýðý þeyin etiketi gerçekten Enemy ise bunu yazdýracak!
             Debug.Log("DÜÞMANA ÇARPIÞMA ONAYLANDI! Kaybetme ekraný tetikleniyor...");
             StartCoroutine(LoseRoutine());
         }
